@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Breast Cancer Diagnosis ML</title>
+<meta name="description" content="A machine learning lab project: classifying breast tumours as malignant or benign, with every graph explained in plain English.">
+<meta property="og:title" content="Breast Cancer Diagnosis ML">
+<meta property="og:description" content="Classifying breast tumours as malignant or benign with scikit-learn: six models, threshold tuning, and every graph explained in plain English.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0072B2">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+
+<aside class="side">
+  <div class="brand">Breast Cancer Diagnosis<small>ML Lab Project</small></div>
+  <nav class="nav" aria-label="Sections">
+    <a href="#overview"><span>🏠</span>Overview</a>
+    <a href="#dataset"><span>🧬</span>The data</a>
+    <a href="#method"><span>🛠️</span>How it works</a>
+    <a href="#models"><span>🏁</span>Model showdown</a>
+    <a href="#graphs"><span>📊</span>Graphs explained</a>
+    <a href="#lab"><span>🎚️</span>Try it yourself</a>
+    <a href="#glossary"><span>📖</span>Glossary</a>
+    <a href="#limits"><span>⚠️</span>Limits &amp; run it</a>
+  </nav>
+  <div class="note"><a href="https://github.com/Mudili-Tejaswini/breast-cancer-ml" target="_blank" rel="noopener">View source on GitHub ↗</a><br><br>Educational project. Not a medical device and not for real diagnosis.</div>
+</aside>
+
+<main>
+
+<!-- ===================== OVERVIEW ===================== -->
+<section id="overview">
+  <div class="eyebrow">Machine learning lab project</div>
+  <h1>Can a computer tell a malignant tumour from a benign one?</h1>
+  <p class="lead">A classifier trained on 569 microscope samples of breast lumps. This site walks through the data, the models, and every graph, with a plain-English note beside each one.</p>
+  <div id="stats" class="stats"></div>
+  <div class="callout">
+    <p><b>How to read this site.</b> Use the menu on the left to jump around. Each graph in <a href="#graphs">Graphs explained</a> has three notes: <i>What you're seeing</i>, <i>How to read it</i> and <i>What it tells us</i>. In <a href="#lab">Try it yourself</a> you can move the decision threshold and watch the results change.</p>
+  </div>
+  <div class="card">
+    <h3>The problem in one paragraph</h3>
+    <p>A doctor takes a tiny needle sample from a breast lump. Software measures the cell nuclei in the microscope image, and the model predicts <b>malignant</b> (cancer) or <b>benign</b> (not cancer). The two mistakes are not equal: <b>missing a cancer</b> is far worse than <b>an unnecessary follow-up test</b>. That is why this project goes beyond accuracy and tunes the model to catch as many cancers as possible.</p>
+  </div>
+</section>
+
+<!-- ===================== DATASET ===================== -->
+<section id="dataset">
+  <div class="eyebrow">Step 1</div>
+  <h2>The data</h2>
+  <p class="lead">Wisconsin Diagnostic Breast Cancer dataset: 569 patients, 30 measurements each, no missing values. 212 are malignant (37.3%) and 357 benign (62.7%).</p>
+  <div class="flow">
+    <div class="card"><h3>Needle sample</h3><p>A fine needle takes cells from the breast lump (a fine-needle aspirate).</p></div>
+    <div class="card"><h3>Microscope image</h3><p>The cells are stained and photographed under a microscope.</p></div>
+    <div class="card"><h3>Software measures</h3><p>Every cell nucleus is outlined and 10 properties are measured for each one.</p></div>
+    <div class="card"><h3>30 features</h3><p>Each property is summarised 3 ways: mean, standard error, and "worst" (most extreme nuclei). 10 × 3 = 30.</p></div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h3>The 10 measurements, in plain words</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Measurement</th><th>What it means</th></tr></thead>
+      <tbody>
+        <tr><td><b>Radius</b></td><td>Typical distance from the centre of the nucleus to its edge (size).</td></tr>
+        <tr><td><b>Texture</b></td><td>How much the brightness varies inside the nucleus. Even staining is low; a blotchy, clumpy interior is high.</td></tr>
+        <tr><td><b>Perimeter, Area</b></td><td>Length of the outline and the space inside it (more size measures).</td></tr>
+        <tr><td><b>Smoothness</b></td><td>How much the radius varies locally; a rough outline scores higher.</td></tr>
+        <tr><td><b>Compactness</b></td><td>How tightly packed the shape is (perimeter² ÷ area − 1).</td></tr>
+        <tr><td><b>Concavity</b></td><td>How deep the inward dents in the outline are.</td></tr>
+        <tr><td><b>Concave points</b></td><td>How many separate inward dents there are.</td></tr>
+        <tr><td><b>Symmetry</b></td><td>How evenly the two halves of the nucleus match.</td></tr>
+        <tr><td><b>Fractal dimension</b></td><td>How rough and complex the boundary is, like measuring a coastline.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="callout good">
+    <p><b>Why does texture relate to cancer?</b> Cancer-cell nuclei tend to be larger, irregular in shape, and have unevenly clumped chromatin (the DNA material), which appears as higher brightness variation. The model picked up a pattern that matches what pathologists look for. It is a statistical pattern in 569 patients, not proof that texture causes cancer.</p>
+  </div>
+</section>
+
+<!-- ===================== METHOD ===================== -->
+<section id="method">
+  <div class="eyebrow">Step 2</div>
+  <h2>How it works</h2>
+  <p class="lead">The workflow is built so the test set is used exactly once, at the very end. That keeps the final numbers honest.</p>
+  <div class="flow">
+    <div class="card"><h3>Split</h3><p>80% of patients to train (455), 20% held back for the final exam (114). Both keep the same cancer ratio.</p></div>
+    <div class="card"><h3>Scale</h3><p>Put all 30 features on a comparable scale, inside a pipeline so nothing leaks from validation data.</p></div>
+    <div class="card"><h3>Compare</h3><p>Six models, each scored with 5-fold cross-validation on the training set only.</p></div>
+    <div class="card"><h3>Tune</h3><p>Grid search tries different settings for the best candidates and keeps the best by F1.</p></div>
+    <div class="card"><h3>Pick a threshold</h3><p>Choose the cut-off that still catches at least 98% of cancers, using training-set predictions only.</p></div>
+    <div class="card"><h3>Final exam</h3><p>Score the chosen model once on the 114 unseen patients.</p></div>
+    <div class="card"><h3>Explain</h3><p>Permutation importance shows which measurements the model relies on.</p></div>
+  </div>
+</section>
+
+<!-- ===================== MODELS ===================== -->
+<section id="models">
+  <div class="eyebrow">Step 3</div>
+  <h2>Model showdown</h2>
+  <p class="lead">Six different algorithms, scored with 5-fold cross-validation. Switch the metric to see how the ranking changes.</p>
+  <div class="card">
+    <div class="seg" id="metricSeg" role="group" aria-label="Metric"></div>
+    <div id="dots" class="dots"></div>
+    <div class="axis"><span></span><div><span>0.90</span><span>0.95</span><span>1.00</span></div><span></span></div>
+    <p id="dotNote" style="color:var(--muted);font-size:.9rem;margin:14px 0 0"></p>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>After tuning</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Model</th><th>Best settings</th><th class="num">CV F1</th></tr></thead>
+      <tbody id="tuneBody"></tbody>
+    </table></div>
+    <p style="color:var(--muted);font-size:.92rem;margin:12px 0 0">The tuned SVM scored highest and was selected, but its lead is within the noise. Think of tuning as a tie-breaker, not proof of a winner. The MLP neural network was not tuned, so it cannot be ruled out.</p>
+  </div>
+</section>
+
+<!-- ===================== GRAPHS ===================== -->
+<section id="graphs">
+  <div class="eyebrow">Step 4</div>
+  <h2>Graphs explained</h2>
+  <p class="lead">Every figure from the project, with a plain-English reading guide. Click any graph to enlarge it.</p>
+
+  <article class="card fig">
+    <header><span class="tag">Graph 1 · Exploring the data</span><h3>Class balance and the strongest features</h3></header>
+    <div class="frame"><img src="figures/01_eda.png" alt="Bar chart of benign and malignant counts, and a bar chart of the eight features most correlated with malignancy"></div>
+    <div class="explain">
+      <div><h4>What you're seeing</h4><p><b>Left:</b> how many patients are benign (357) and malignant (212). <b>Right:</b> the 8 measurements most strongly linked to a malignant result.</p></div>
+      <div><h4>How to read it</h4><p>Longer bars on the right mean a stronger link (a correlation of 0 is no link, 1 is perfect). The classes are imbalanced, so accuracy alone can mislead.</p></div>
+      <div class="take"><h4>What it tells us</h4><p>Size and shape irregularity (concave points, perimeter, radius) are the clearest signals. But many features say the same thing: 21 pairs are correlated above 0.9.</p></div>
+    </div>
+  </article>
+
+  <article class="card fig">
+    <header><span class="tag">Graph 2 · Comparing models</span><h3>Which algorithm sorts patients best?</h3></header>
+    <div class="frame"><img src="figures/02_model_comparison.png" alt="Horizontal bars of mean F1 score for six models with error bars"></div>
+    <div class="explain">
+      <div><h4>What you're seeing</h4><p>The average F1 score of six models across 5 cross-validation folds. The grey lines are one standard deviation.</p></div>
+      <div><h4>How to read it</h4><p>F1 combines precision and recall into one number (1.0 is perfect). If the grey lines overlap, the difference between models may be luck.</p></div>
+      <div class="take"><h4>What it tells us</h4><p>All six land between 0.946 and 0.964 and their error bars overlap. Even simple logistic regression matches the neural network, so the classes are close to linearly separable.</p></div>
+    </div>
+  </article>
+
+  <article class="card fig">
+    <header><span class="tag">Graph 3 · Choosing the cut-off</span><h3>The precision–recall trade-off</h3></header>
+    <div class="frame"><img src="figures/03_threshold.png" alt="Precision and recall curves against decision threshold with the default 0.5 and chosen 0.14 thresholds marked"></div>
+    <div class="explain">
+      <div><h4>What you're seeing</h4><p>The model outputs a probability of malignancy. This graph shows precision (blue) and recall (orange) for every possible cut-off on that probability.</p></div>
+      <div><h4>How to read it</h4><p>Moving left means flagging more patients as "malignant": recall rises, precision falls. The dotted line is the default 0.5; the green dashed line is the chosen 0.14.</p></div>
+      <div class="take"><h4>What it tells us</h4><p>Because missing a cancer is the worse error, the threshold is set to keep recall at 98% or more, accepting more false alarms. Try it live in <a href="#lab">Try it yourself</a>.</p></div>
+    </div>
+  </article>
+
+  <article class="card fig">
+    <header><span class="tag">Graph 4 · The final exam</span><h3>Confusion matrices and ROC curve on unseen patients</h3></header>
+    <div class="frame"><img src="figures/04_test_results.png" alt="Two confusion matrices at thresholds 0.5 and 0.14, and an ROC curve with AUC 0.993"></div>
+    <div class="explain">
+      <div><h4>What you're seeing</h4><p><b>Left and middle:</b> counts of right and wrong predictions on 114 patients the model never saw, at two thresholds. <b>Right:</b> the ROC curve.</p></div>
+      <div><h4>How to read it</h4><p>The diagonal cells (top-left, bottom-right) are correct. The bottom-left cell is the dangerous one: a cancer predicted as benign. On the ROC curve, hugging the top-left corner is good.</p></div>
+      <div class="take"><h4>What it tells us</h4><p>At 0.5: 3 cancers missed, 0 false alarms. At 0.14: 1 missed, 6 false alarms. ROC-AUC is 0.993, so the model separates the two groups very well.</p></div>
+    </div>
+  </article>
+
+  <article class="card fig">
+    <header><span class="tag">Graph 5 · Opening the black box</span><h3>Which measurements matter most?</h3></header>
+    <div class="frame"><img src="figures/05_feature_importance.png" alt="Horizontal bars of permutation importance for the eight most influential features"></div>
+    <div class="explain">
+      <div><h4>What you're seeing</h4><p>For each feature, how much the model's test F1 drops when that feature's values are randomly shuffled (repeated 30 times).</p></div>
+      <div><h4>How to read it</h4><p>A longer bar means the model leaned on that feature more. A bar near zero means the model could get by without it.</p></div>
+      <div class="take"><h4>What it tells us</h4><p>Worst texture (0.051), worst concavity and mean concavity lead. Values are small because features are redundant: shuffle one and the model recovers the signal from its siblings.</p></div>
+    </div>
+  </article>
+</section>
+
+<!-- ===================== LAB ===================== -->
+<section id="lab">
+  <div class="eyebrow">Interactive</div>
+  <h2>Try it yourself: move the threshold</h2>
+  <p class="lead">These are the real predictions for the 114 test patients (42 malignant). Drag the slider and watch the trade-off between missed cancers and false alarms.</p>
+  <div class="card lab">
+    <div>
+      <div class="slider-head"><span>Flag as malignant when probability ≥</span><b id="thrVal">0.50</b></div>
+      <input id="thr" type="range" min="0.01" max="0.99" step="any" aria-label="Decision threshold">
+      <div class="presets">
+        <button data-th="0.5">Default 0.5</button>
+        <button data-th="chosen">Chosen (recall-first)</button>
+        <button data-th="0.9">Very strict 0.9</button>
+        <button data-th="0.02">Very sensitive 0.02</button>
+      </div>
+      <div id="verdict" class="callout"></div>
+    </div>
+    <div>
+      <div class="cm" aria-label="Confusion matrix">
+        <span></span><span class="h">Predicted benign</span><span class="h">Predicted malignant</span>
+        <span class="h">Actually benign</span><div class="cell ok"><b id="tn">0</b>correct</div><div class="cell bad"><b id="fp">0</b>false alarm</div>
+        <span class="h">Actually malignant</span><div class="cell bad danger"><b id="fn">0</b>missed cancer</div><div class="cell ok"><b id="tp">0</b>caught</div>
+      </div>
+      <div class="metrics">
+        <div><b id="mRec">0</b><span>Recall (cancers caught)</span></div>
+        <div><b id="mPrec">0</b><span>Precision (flags that are real)</span></div>
+        <div><b id="mAcc">0</b><span>Accuracy</span></div>
+        <div><b id="mF1">0</b><span>F1 score</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GLOSSARY ===================== -->
+<section id="glossary">
+  <div class="eyebrow">Reference</div>
+  <h2>Glossary</h2>
+  <p class="lead">The terms used above, in plain English.</p>
+  <details><summary>Precision</summary><p>Of all the patients the model flagged as malignant, the share that really were. High precision means few false alarms.</p></details>
+  <details><summary>Recall (sensitivity)</summary><p>Of all the patients who really had cancer, the share the model caught. High recall means few missed cancers. It is the most important metric here.</p></details>
+  <details><summary>F1 score</summary><p>A single number that balances precision and recall. It is high only when both are high.</p></details>
+  <details><summary>Accuracy, and why it can mislead</summary><p>The share of all predictions that were right. With 63% benign cases, a model that always says "benign" would already score 63%, so accuracy alone hides the cost of missed cancers.</p></details>
+  <details><summary>Confusion matrix</summary><p>A 2×2 table of correct and wrong predictions: true negatives, false positives, false negatives and true positives.</p></details>
+  <details><summary>ROC curve and AUC</summary><p>The ROC curve shows how well the model ranks cancers above non-cancers across all thresholds. AUC is the area under it: 0.5 is a coin flip, 1.0 is perfect.</p></details>
+  <details><summary>Decision threshold</summary><p>The model outputs a probability. The threshold is the cut-off above which a patient is labelled malignant. Lower it to catch more cancers at the cost of more false alarms.</p></details>
+  <details><summary>Cross-validation</summary><p>Split the training data into 5 parts, train on 4 and test on the 5th, rotate five times, and average. It gives a steadier estimate than one split.</p></details>
+  <details><summary>Permutation importance</summary><p>Shuffle one feature's values and measure how much performance drops. A big drop means the model depends on that feature.</p></details>
+  <details><summary>Data leakage</summary><p>When information from the test data sneaks into training, making results look better than they really are. This project avoids it by scaling inside the pipeline and choosing the threshold without the test set.</p></details>
+</section>
+
+<!-- ===================== LIMITS ===================== -->
+<section id="limits">
+  <div class="eyebrow">Be honest about it</div>
+  <h2>Limitations, and how to run it</h2>
+  <div class="callout warn">
+    <p><b>Not a medical device.</b> This is a teaching project and must not be used for real diagnosis.</p>
+  </div>
+  <div class="card">
+    <ul style="margin:0;padding-left:20px">
+      <li><b>Small test set.</b> With 114 patients, one patient moves recall by about 2.4 points, so "3 vs 1 missed cancers" is suggestive, not conclusive.</li>
+      <li><b>One dataset, one institution.</b> Performance on other labs or scanners is untested.</li>
+      <li><b>Pre-computed features.</b> The model sees measurements, not raw images; a CNN on the images would be a different, harder problem.</li>
+      <li><b>Untuned neural network.</b> It could not be fairly ruled out against the SVM.</li>
+    </ul>
+  </div>
+  <h3 style="margin-top:28px">Reproduce the results</h3>
+<pre><button class="copy">Copy</button>pip install -r requirements.txt
+python run_project.py</pre>
+  <p style="color:var(--muted)">The random seed is fixed at 42, so you get identical numbers every time. Running the script also regenerates this website's data.</p>
+  <footer>Wisconsin Diagnostic Breast Cancer dataset (UCI / scikit-learn). Built with scikit-learn, pandas and matplotlib.</footer>
+</section>
+
+</main>
+</div>
+
+<dialog id="lightbox"><img alt=""></dialog>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
